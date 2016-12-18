@@ -155,68 +155,11 @@ uint8_t isvalid(char s)
 
 void getsUart0()
 {
-	uint8_t i,j,count=0;
-	for(i=0;i<strlen(str);i++)
-	{
-		str[i]=NULL;
-	}
-	str[count]=getcUart0();
-	while(!isenter(str[count]))
-	{
-		if(count<strlen(str))
-		{
-		    if((isbks(str[count]) && count!=0))
-		    {
-   				count--;
-  				str[count]=NULL;
-  	  			putsUart0("\r");
-   	  			putsUart0(str);
-		    }
-	    	else if(isvalid(str[count]))
-	    	{
-	    		putcUart0(str[count]);
-			    count++;
-		   	}
-	     	str[count]=getcUart0();
-	  }
-	else
-		break;
-	}
-
-	for(j=count;j<=strlen(str);j++)
-		str[j]=NULL;
-	for(i=0;(i<strlen(str) && str[i]!=NULL);i++)
-	{
-	   	str[i]=iscapital(str[i]);
-	   	if(isdelim(str[i]))
-	   	{
-	   		for(j=i;str[j]!=NULL;j++)
-	   			str[j]=str[j+1];
-	  		str[j]=NULL;
-	  		i--;
-	 	}
-	}
+	//Gives a strinng output containing only letters, numbers 
 }
 void getVoltFreq()
 {
-	uint8_t i;
-	field_size=0;
-	for(i=0;i<3;i++)
-		fieldStart[i]=0;
-	for(i=0;i<strlen(str);i++)
-	{
-		if( (str[i] >= '0' && str[i] <= '9')||str[i]=='.'||str[i]=='-')
-		{
-			fieldStart[field_size]=i;
-			while((str[i] >='0'  && str[i] <= '9')||str[i]=='.'||str[i]=='-')
-						i++;
-			field_size++;
-
-		}
-	}
-		freq=atof(&str[fieldStart[0]]);
-		vtg=atof(&str[fieldStart[1]]);
-		duty=atof(&str[fieldStart[2]]);
+	//Gives Start location of the voltage, frequency and duty cycle
 }
 void dc()
 {
@@ -224,63 +167,31 @@ void dc()
 	vtg=freq;
 	if(vtg<0)
     	{
-			temp=2069-(1907*(vtg)/5);
-			SSI2_DR_R=0x3000+temp;
+		//load value in SSI2_DR_R	
      		while (SSI2_SR_R & SSI_SR_BSY);
 
     	}
     	else
     	{
-    		temp=2070-(1911*(vtg)/5);
-    		SSI2_DR_R=0x3000+temp;
+    		//load value in SSI2_DR_R
     		while (SSI2_SR_R & SSI_SR_BSY);
     	}
 }
 void table_sine(void)
 {
-	uint32_t i;
-		for(i=0;i<4096;i++)
-		{
-				if(sin(i)<=0)
-					s_table[i]=0x3000+2069+((1907/5)*sin(2*pi*i/4096)*(vtg));
-				else
-					s_table[i]=0x3000+2070+((1911/5)*sin(2*pi*i/4096)*(vtg));
-		}
-
+	// Create a LUT for sine wave i.e table[i]= 0x3000+2048+2048*sin(2*pi*i/4096);
 }
 
 
 
 void table_square(void)
 {
-	uint32_t i;
-	/*float temp=0;
-	for(i=0;i<4096;i++)
-		s_table[i]=0;
-		/for(i=0;i<(4096);i++)
-		{
-			temp=0;
-			for(j=0;j<25;j++)
-			{
-				temp=temp-sin(pi*(2*j+1)*i/2069)/(2*j+1);
-			}
-			s_table[i]=temp*(vtg+0.5)*1907/(5)+2069+0x3000;
-		}*/
-	for (i=0;i<(4096*duty/100);i++)
-		s_table[i]=0x3000+2069-(1907*(vtg)/5);
-	for(;i<4096;i++)
-		s_table[i]=0x3000+2069+(1907*(vtg)/5);
-
+	// Create a LUT for Sqauare wave
 }
 
 void table_sawtooth(void)
 {
-	uint32_t i;
-	for(i=0;i<(4096);i++)
-		s_table[i]=	0x3000+2070-(1911*(vtg)*i/(4096*5));
-	for(;i<(4096);i++)
-		s_table[i]=	0x3000+2070-(1907*(vtg)*i/(5*4096));
-
+	// Create a LUT for sawtooth i.e. table[i]= 0x3000+2048+2048*(2*pi*i/4096)
 }
 int delPhi()
 {
@@ -415,50 +326,7 @@ void sweep(void)
 
 int error()
 {
-	if(strstr(str,"dc"))
-	{
-		vtg=freq;
-		if(vtg>5)
-			return 1;
-		else if (vtg<-5)
-			return 1;
-		else if(fieldStart[0] == 0)
-			return 1;
-		return 0;
-	}
-	if(strstr(str,"sine")||strstr(str,"square")|| strstr(str,"sawtooth"))
-		{
-		if(vtg > 5)
-			return 1;
-		else if(vtg < -5)
-			return 1;
-		else if(field_size > 4)
-			return 1;
-		else if(freq < 0 || freq > 10000)
-			return 1;
-		else if(fieldStart[0] == 0 || fieldStart[1] == 0)
-			return 1;
-		return 0;
-		}
-	if(strstr(str,"sweep"))
-	{
-		freq1=vtg;
-		if(freq < 0 || freq > 10000 || fieldStart[0]==0)
-			return 1;
-		else if(freq1 < 0 || freq1 > 10000 || fieldStart[1]==0)
-			return 1;
-		else if(freq == freq1)
-			return 1;
-		else
-			return 0;
-	}
-	if(strstr(str,"voltage"))
-		return 0;
-	if(strstr(str,"menu"))
-		return 0;
-	if(strstr(str,"reset"))
-		return 0;
-	return 1;
+	// Check for Volatage, Frequency range
 }
 void menu()
 {
@@ -528,8 +396,7 @@ int main(void)
 		}
 		if(strstr(str,"reset"))
 		{
-			__asm("    .global _c_int00\n"
-				       "    b.w     _c_int00");
+			//LED should blink again
 		}
 
 	}
