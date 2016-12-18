@@ -119,39 +119,6 @@ void LED()
 	waitMicrosecond(500000);
 }
 
-uint8_t isbks(char s)
-{
-	if(s==8)
-		return 1;
-	else
-		return 0;
-}
-uint8_t isenter(char s)
-{
-	if(s==13)
-		return 1;
-	else
-		return 0;
-}
-char iscapital(char s)
-{
-	if(s>=65 && s<=90)
-		s=s+32;
-	return s;
-}
-uint8_t isdelim(char s)
-{
-	if((s>=48 && s<=57)||s==46||(s>=97 && s<=122)||s==32||s==45)
-		return 0;
-	else return 1;
-}
-uint8_t isvalid(char s)
-{
-	if(s>=32)
-		return 1;
-	else
-		return 0;
-}
 
 void getsUart0()
 {
@@ -181,8 +148,6 @@ void table_sine(void)
 {
 	// Create a LUT for sine wave i.e table[i]= 0x3000+2048+2048*sin(2*pi*i/4096);
 }
-
-
 
 void table_square(void)
 {
